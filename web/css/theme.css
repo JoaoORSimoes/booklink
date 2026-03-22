@@ -1,0 +1,25 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.navbar {
+  background-color: #1b5e20;
+  color: white;
+}
+
+.navbar-brand {
+  color: white;
+}
+
+.btn-primary {
+  background-color: #1b5e20;
+  border-color: #1b5e20;
+}
+
+.btn-primary:hover {
+  background-color: #145a32;
+}
+
+.card {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}

@@ -1,0 +1,211 @@
+version: "3.8"
+
+services:
+  # ========================
+  # NGINX LOAD BALANCER
+  # ========================
+  nginx-lb:
+    image: nginx:alpine
+    container_name: booklink_nginx_lb
+    ports:
+      - "80:80"      # 🌐 Frontend + API Gateway (EDGE)
+      - "8080:8080"  # 📊 Monitoring (nginx_status)
+      - "8081:8081"  # ⚖️ Load Balancer direto (debug/scale)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./web:/usr/share/nginx/html   # 👈 FRONTEND
+    depends_on:
+      - api_gateway
+      - user_service
+    networks:
+      - microservices-net
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+  # ========================
+  # API GATEWAY (AUTH + ROUTING)
+  # ========================
+  api_gateway:
+    build: api_gateway/
+    container_name: api_gateway
+    expose:
+      - "8000"
+    environment:
+      - JWT_SECRET=super-secret-key
+      - USER_SERVICE_URL=http://user_service:6000
+      - CATALOG_SERVICE_URL=http://catalog_service:7001
+      - RESERVATION_SERVICE_URL=http://reservation_service:3100
+      - PAYMENT_SERVICE_URL=http://payment_service:4000
+    depends_on:
+      - user_service
+      - catalog_service
+      - reservation_service
+      - payment_service
+    networks:
+      - microservices-net
+
+  # ========================
+  # USER SERVICE
+  # ========================
+  user_service:
+    build: user_service/
+    container_name: user_service
+    ports:
+      - "6000:6000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres_users:5432/users_db
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+    depends_on:
+      - postgres_users
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ========================
+  # CATALOG SERVICE
+  # ========================
+  catalog_service:
+    build: catalog_service/
+    container_name: catalog_service
+    ports:
+      - "7001:7001"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres_catalog:5432/catalog_db
+      - RESERVATION_SERVICE_URL=http://reservation_service:3100
+      - STANDALONE_MODE=false
+    depends_on:
+      - postgres_catalog
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ========================
+  # RESERVATION SERVICE
+  # ========================
+  reservation_service:
+    build: reservation_service/
+    container_name: reservation_service
+    ports:
+      - "3100:3100"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres_reservations:5432/reservations_db
+      - USER_SERVICE_URL=http://user_service:6000
+      - CATALOG_SERVICE_URL=http://catalog_service:7001
+      - STANDALONE_MODE=false
+    depends_on:
+      - postgres_reservations
+      - user_service
+      - catalog_service
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ========================
+  # PAYMENT SERVICE
+  # ========================
+  payment_service:
+    build: payment_service/
+    container_name: payment_service
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres_payments:5432/payments_db
+      - USER_SERVICE_URL=http://user_service:6000
+      - STANDALONE_MODE=false
+    depends_on:
+      - postgres_payments
+      - user_service
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ========================
+  # DATABASES
+  # ========================
+  postgres_users:
+    image: postgres:15
+    container_name: postgres_users
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users_db
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - users_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-net
+
+  postgres_catalog:
+    image: postgres:15
+    container_name: postgres_catalog
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: catalog_db
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - catalog_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-net
+
+  postgres_reservations:
+    image: postgres:15
+    container_name: postgres_reservations
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reservations_db
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - reservations_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-net
+
+  postgres_payments:
+    image: postgres:15
+    container_name: postgres_payments
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: payments_db
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - payments_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-net
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  users_db_data:
+  catalog_db_data:
+  reservations_db_data:
+  payments_db_data:

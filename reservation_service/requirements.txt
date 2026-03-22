@@ -1,0 +1,4 @@
+flask
+requests
+SQLAlchemy>=1.4
+psycopg2-binary
