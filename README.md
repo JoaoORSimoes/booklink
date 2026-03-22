@@ -1,5 +1,4 @@
 #Developed with assistance from AI tools and in collaboration with colleagues
-
 - Francisco Cardoso
 - Helder Gonçalves
 - Joao Hossi
