@@ -13,6 +13,7 @@ This project was built with a microservices architecture and allows users to sea
 - Fine and payment processing
 - Command-line interaction
 - Docker-based deployment
+- API testing and validation with Postman
 
 ## Microservices
 - **Catalog service**: Books, authors, availability, search
@@ -23,6 +24,7 @@ This project was built with a microservices architecture and allows users to sea
 ## Technologies
 - Python
 - Docker & Docker compose
+- Postman for API verification and endpoint validation
 
 ## Architecture
 The system is divided into independent services that communicate with each other via REST/RPC to manage library operations in a scalable and maintainable way.
