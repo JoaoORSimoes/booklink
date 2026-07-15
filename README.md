@@ -1,8 +1,3 @@
-#Developed with assistance from AI tools and in collaboration with colleagues
-- Francisco Cardoso
-- Helder Gonçalves
-- Joao Hossi
-
 # BookLink
 This project was built with a microservices architecture and allows users to search the catalog, reserve and borrow books, manage returns, and process fines.
 
@@ -28,3 +23,9 @@ This project was built with a microservices architecture and allows users to sea
 
 ## Architecture
 The system is divided into independent services that communicate with each other via REST/RPC to manage library operations in a scalable and maintainable way.
+
+## Authorship
+Developed with assistance from AI tools and in collaboration with colleagues
+- Francisco Cardoso
+- Helder Gonçalves
+- Joao Hossi
